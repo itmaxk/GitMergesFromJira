@@ -1,4 +1,5 @@
 import gitlab
+import gitlab.v4.objects
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -10,6 +11,7 @@ from termcolor import colored
 def createConfig(path):
     config = configparser.ConfigParser()
     config.add_section("Settings")
+    config.set("Settings", "jiraLink", "")
     config.set("Settings", "jiraLogin", "")
     config.set("Settings", "jiraPass", "")
     config.set("Settings", "jiraParseURL", "")
@@ -64,7 +66,7 @@ def get_html(site):
 def get_links_a_with_site(soup_resp, class_tag):
     vLinksSite = []
     for link in soup_resp.find_all("a", {"class": class_tag}):
-        vLinksSite.append('https://jira.adacta-fintech.com'+link.get('href'))
+        vLinksSite.append(jiraLink+link.get('href'))
     return vLinksSite
 
 def get_links_a(soup_resp, class_tag):
@@ -148,6 +150,8 @@ def main():
         targetBranchList = []
         promoteMessage = colored('Не попал с промоутом ' + promoteBranch + ' от: ' + promoteBranchDate, 'white', 'on_red');
         for git_k in git_values.items():
+            if git_k[1][3] == None:
+                continue
             print('\n' + git_k[1][0])
             if git_k[1][1] == 'merged':
                 print('MR: ' + git_k[0], colored(git_k[1][1], 'green') + ' to ' + git_k[1][2] + ' (MR was merged at: ' + git_k[1][3] + ')')
@@ -178,7 +182,10 @@ def main():
     input('Press ENTER to exit')
 
 if __name__ == '__main__':
-    path = "settings.ini"
+    thisfolder = os.path.dirname(os.path.abspath(__file__))
+    initfile = os.path.join(thisfolder, 'settings.ini')
+    path = initfile
+    jiraLink = get_setting(path, 'Settings', 'jiraLink')
     jiraLogin = get_setting(path, 'Settings', 'jiraLogin')
     jiraPass = get_setting(path, 'Settings', 'jiraPass')
     jiraParseURL = get_setting(path, 'Settings', 'jiraParseURL')
